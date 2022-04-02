@@ -1,15 +1,15 @@
 const db = require('../config/connection')
 const collection = require('../config/collections')
 const bcrypt = require("bcrypt")
+const jwt = require("jsonwebtoken")
+
 
 module.exports = {
     signUp: async (req, res) => {
         console.log(req.body)
         const { fullName, phone, password } = req.body
         console.log(collection.USER_COLLECTION)
-
         try {
-
             if (!phone || !password || !fullName) {
                 return res
                     .status(400)
@@ -29,9 +29,12 @@ module.exports = {
                     password,
                     12
                 );
-                db.get()
+               let user = db.get()
                     .collection(collection.USER_COLLECTION)
                     .insertOne({ fullName, phone, password: hashedPassword })
+
+                const token = jwt.sign({ email: result.email, id: result.insertedId.str }, 'secret', { expiresIn: "7d" })
+                return res.status(200).json({ user, token })
             }
 
         } catch (error) {
@@ -67,13 +70,17 @@ module.exports = {
              .status(401)
              .json({ errors: 'Invalid Password' })
             }
-            res.status(200).json({ user})
+            const token = jwt.sign({ email: user.email, id: user._id }, 'secret', { expiresIn: "7d" })
+            res.status(200).json({ user, token})
 
         } catch (error) {
             console.log(error)
             res.status(500).json({ error: error.message });
         }
 
+
+    },
+    Verify: async(req, res) => {
 
     }
 
